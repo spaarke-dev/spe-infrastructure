@@ -1,0 +1,6 @@
+@Spe.TestServer_HostAddress = http://localhost:5073
+
+GET {{Spe.TestServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

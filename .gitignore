@@ -1,0 +1,17 @@
+# .gitignore for spe-infrastructure
+
+# secrets/keys
+*.pfx
+*.pem
+*.cer
+*.key
+*.crt
+*.env
+appsettings*.json
+
+# build outputs
+bin/
+obj/
+
+# VS Code
+.vscode/
