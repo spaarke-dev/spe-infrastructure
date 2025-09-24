@@ -1,0 +1,247 @@
+{
+  "alertRules": [
+    {
+      "name": "SPE-API-HighErrorRate",
+      "description": "Alert when API error rate exceeds 5% over 5 minutes",
+      "severity": 2,
+      "enabled": true,
+      "scopes": [
+        "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+      ],
+      "condition": {
+        "allOf": [
+          {
+            "query": "AppRequests | where TimeGenerated > ago(5m) | where AppRoleName == \"Spe.Bff.Api\" | extend Endpoint = tostring(Properties[\"EndpointName\"]) | summarize TotalRequests = count(), ErrorRequests = countif(Success == false), ErrorRate = (countif(Success == false) * 100.0) / count() by Endpoint | where TotalRequests >= 10 and ErrorRate > 5.0",
+            "timeAggregation": "Total",
+            "dimensions": [
+              {
+                "name": "Endpoint",
+                "operator": "Include",
+                "values": ["*"]
+              }
+            ],
+            "operator": "GreaterThan",
+            "threshold": 0
+          }
+        ]
+      },
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT5M",
+      "actions": [
+        {
+          "actionGroupId": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/actionGroups/SPE-CriticalAlerts"
+        }
+      ]
+    },
+    {
+      "name": "SPE-API-HighResponseTime",
+      "description": "Alert when P95 response time exceeds 5 seconds",
+      "severity": 2,
+      "enabled": true,
+      "scopes": [
+        "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+      ],
+      "condition": {
+        "allOf": [
+          {
+            "query": "AppRequests | where TimeGenerated > ago(5m) | where AppRoleName == \"Spe.Bff.Api\" | extend Endpoint = tostring(Properties[\"EndpointName\"]) | summarize RequestCount = count(), P95Duration = percentile(DurationMs, 95) by Endpoint | where RequestCount >= 5 and P95Duration > 5000",
+            "timeAggregation": "Total",
+            "dimensions": [
+              {
+                "name": "Endpoint",
+                "operator": "Include",
+                "values": ["*"]
+              }
+            ],
+            "operator": "GreaterThan",
+            "threshold": 0
+          }
+        ]
+      },
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT5M",
+      "actions": [
+        {
+          "actionGroupId": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/actionGroups/SPE-PerformanceAlerts"
+        }
+      ]
+    },
+    {
+      "name": "SPE-GraphAPI-DependencyFailure",
+      "description": "Alert when Graph API dependency failure rate exceeds 20%",
+      "severity": 1,
+      "enabled": true,
+      "scopes": [
+        "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+      ],
+      "condition": {
+        "allOf": [
+          {
+            "query": "AppDependencies | where TimeGenerated > ago(5m) | where AppRoleName == \"Spe.Bff.Api\" | where Type == \"Http\" and Target contains \"graph.microsoft.com\" | extend GraphOperation = tostring(Properties[\"GraphOperation\"]) | summarize CallCount = count(), FailureCount = countif(Success == false), FailureRate = (countif(Success == false) * 100.0) / count() by GraphOperation | where CallCount >= 3 and FailureRate > 20.0",
+            "timeAggregation": "Total",
+            "dimensions": [
+              {
+                "name": "GraphOperation",
+                "operator": "Include",
+                "values": ["*"]
+              }
+            ],
+            "operator": "GreaterThan",
+            "threshold": 0
+          }
+        ]
+      },
+      "evaluationFrequency": "PT5M",
+      "windowSize": "PT5M",
+      "actions": [
+        {
+          "actionGroupId": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/actionGroups/SPE-CriticalAlerts"
+        }
+      ]
+    },
+    {
+      "name": "SPE-RateLimitViolations",
+      "description": "Alert on high rate of rate limit violations",
+      "severity": 3,
+      "enabled": true,
+      "scopes": [
+        "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+      ],
+      "condition": {
+        "allOf": [
+          {
+            "query": "AppTraces | where TimeGenerated > ago(10m) | where AppRoleName == \"Spe.Bff.Api\" | where Message contains \"Rate limit exceeded\" | extend PolicyName = tostring(Properties[\"PolicyName\"]) | summarize ViolationCount = count() by PolicyName | where ViolationCount > 50",
+            "timeAggregation": "Total",
+            "dimensions": [
+              {
+                "name": "PolicyName",
+                "operator": "Include",
+                "values": ["*"]
+              }
+            ],
+            "operator": "GreaterThan",
+            "threshold": 0
+          }
+        ]
+      },
+      "evaluationFrequency": "PT10M",
+      "windowSize": "PT10M",
+      "actions": [
+        {
+          "actionGroupId": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/actionGroups/SPE-WarningAlerts"
+        }
+      ]
+    },
+    {
+      "name": "SPE-MemoryUsageHigh",
+      "description": "Alert when memory usage is consistently high",
+      "severity": 2,
+      "enabled": true,
+      "scopes": [
+        "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+      ],
+      "condition": {
+        "allOf": [
+          {
+            "query": "AppMetrics | where TimeGenerated > ago(15m) | where AppRoleName == \"Spe.Bff.Api\" | where Name contains \"memory\" | summarize AvgMemoryMB = avg(Value) / 1024.0 / 1024.0 | where AvgMemoryMB > 1024",
+            "timeAggregation": "Average",
+            "operator": "GreaterThan",
+            "threshold": 0
+          }
+        ]
+      },
+      "evaluationFrequency": "PT15M",
+      "windowSize": "PT15M",
+      "actions": [
+        {
+          "actionGroupId": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/actionGroups/SPE-PerformanceAlerts"
+        }
+      ]
+    },
+    {
+      "name": "SPE-UploadFailureSpike",
+      "description": "Alert on spike in upload operation failures",
+      "severity": 2,
+      "enabled": true,
+      "scopes": [
+        "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+      ],
+      "condition": {
+        "allOf": [
+          {
+            "query": "AppRequests | where TimeGenerated > ago(10m) | where AppRoleName == \"Spe.Bff.Api\" | where Url contains \"/upload\" or Url contains \"/chunk\" | summarize TotalUploads = count(), FailedUploads = countif(Success == false), FailureRate = (countif(Success == false) * 100.0) / count() | where TotalUploads >= 5 and FailureRate > 15.0",
+            "timeAggregation": "Total",
+            "operator": "GreaterThan",
+            "threshold": 0
+          }
+        ]
+      },
+      "evaluationFrequency": "PT10M",
+      "windowSize": "PT10M",
+      "actions": [
+        {
+          "actionGroupId": "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/microsoft.insights/actionGroups/SPE-PerformanceAlerts"
+        }
+      ]
+    }
+  ],
+  "actionGroups": [
+    {
+      "name": "SPE-CriticalAlerts",
+      "shortName": "SPE-Crit",
+      "enabled": true,
+      "emailReceivers": [
+        {
+          "name": "OnCallTeam",
+          "emailAddress": "spe-oncall@company.com",
+          "useCommonAlertSchema": true
+        }
+      ],
+      "smsReceivers": [
+        {
+          "name": "OnCallPrimary",
+          "countryCode": "1",
+          "phoneNumber": "5551234567"
+        }
+      ],
+      "webhookReceivers": [
+        {
+          "name": "SlackIntegration",
+          "serviceUri": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+          "useCommonAlertSchema": true
+        }
+      ]
+    },
+    {
+      "name": "SPE-PerformanceAlerts",
+      "shortName": "SPE-Perf",
+      "enabled": true,
+      "emailReceivers": [
+        {
+          "name": "DevTeam",
+          "emailAddress": "spe-dev@company.com",
+          "useCommonAlertSchema": true
+        }
+      ],
+      "webhookReceivers": [
+        {
+          "name": "TeamsIntegration",
+          "serviceUri": "https://company.webhook.office.com/YOUR/TEAMS/WEBHOOK",
+          "useCommonAlertSchema": true
+        }
+      ]
+    },
+    {
+      "name": "SPE-WarningAlerts",
+      "shortName": "SPE-Warn",
+      "enabled": true,
+      "emailReceivers": [
+        {
+          "name": "DevTeam",
+          "emailAddress": "spe-dev@company.com",
+          "useCommonAlertSchema": true
+        }
+      ]
+    }
+  ]
+}

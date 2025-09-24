@@ -20,6 +20,9 @@ var builder = WebApp.CreateBuilder(args);
 
 // ---- Services Registration ----
 
+// Memory cache for capabilities caching
+builder.Services.AddMemoryCache();
+
 // Authorization policies (replace RequireAssertion with your real mapping)
 builder.Services.AddAuthorization(options =>
 {
@@ -112,6 +115,11 @@ app.MapGet("/ping", (HttpContext context) =>
         timestamp = DateTimeOffset.UtcNow
     });
 });
+
+// ---- User Identity & Entitlements Endpoints ----
+
+// Map user identity endpoints (whoami + capabilities)
+app.MapUserEndpoints();
 
 // ---- OBO Endpoints ----
 

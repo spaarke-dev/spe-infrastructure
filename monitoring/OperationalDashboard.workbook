@@ -1,0 +1,318 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# SPE Infrastructure - Operational Dashboard\n\nThis dashboard provides real-time operational insights for the SharePoint Embedded (SPE) infrastructure, including API performance, file operations analytics, and system health metrics."
+      },
+      "name": "Header"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "timeRange",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "value": {
+              "durationMs": 3600000,
+              "createdTime": "2024-01-01T00:00:00.000Z",
+              "isInitialTime": false,
+              "grain": 1,
+              "useDashboardTimeRange": false
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContextFromParameter": "TimeRange"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.insights/components"
+      },
+      "name": "TimeRangeSelector"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "API Performance",
+            "subTarget": "performance"
+          },
+          {
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "File Operations",
+            "subTarget": "fileops"
+          },
+          {
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "System Health",
+            "subTarget": "health"
+          },
+          {
+            "cellValue": "selectedTab",
+            "linkTarget": "parameter",
+            "linkLabel": "Security & Auth",
+            "subTarget": "security"
+          }
+        ]
+      },
+      "name": "TabSelector"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| extend Endpoint = tostring(Properties[\"EndpointName\"])\n| summarize\n    RequestCount = count(),\n    SuccessRate = (countif(Success == true) * 100.0) / count(),\n    AvgDuration = avg(DurationMs),\n    P95Duration = percentile(DurationMs, 95)\n    by bin(TimeGenerated, 5m), Endpoint\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "API Performance Overview",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["RequestCount", "SuccessRate", "AvgDuration", "P95Duration"],
+                "group": "Endpoint",
+                "createOtherGroup": 10
+              }
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| extend Endpoint = tostring(Properties[\"EndpointName\"])\n| summarize\n    TotalRequests = count(),\n    ErrorRequests = countif(Success == false),\n    ErrorRate = (countif(Success == false) * 100.0) / count(),\n    AvgDuration = avg(DurationMs)\n    by Endpoint\n| order by TotalRequests desc",
+              "size": 0,
+              "title": "Endpoint Statistics",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "table",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "ErrorRate",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "redGreen"
+                    }
+                  },
+                  {
+                    "columnMatch": "AvgDuration",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "yellowGreenBlue"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "performance"
+      },
+      "name": "PerformanceTab"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| where Url contains \"/upload\" or Url contains \"/chunk\" or Url contains \"/content\"\n| extend\n    OperationType = case(\n        Url contains \"upload-session\", \"Session Creation\",\n        Url contains \"chunk\", \"Chunk Upload\",\n        Url contains \"/upload\", \"Small Upload\",\n        Url contains \"/content\", \"Download\",\n        \"Other\"),\n    ContentSize = tolong(Properties[\"ContentLength\"])\n| summarize\n    OperationCount = count(),\n    SuccessRate = (countif(Success == true) * 100.0) / count(),\n    AvgDuration = avg(DurationMs),\n    TotalBytes = sum(ContentSize)\n    by bin(TimeGenerated, 10m), OperationType\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "File Operations Overview",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["OperationCount", "SuccessRate"],
+                "group": "OperationType"
+              }
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| where Url contains \"/content\"\n| extend\n    HasRange = tobool(Properties[\"HasRangeHeader\"]),\n    CacheHit = tobool(Properties[\"ETagCacheHit\"]),\n    BytesServed = tolong(Properties[\"ContentLength\"])\n| summarize\n    TotalDownloads = count(),\n    RangeRequestPercent = (countif(HasRange == true) * 100.0) / count(),\n    CacheHitPercent = (countif(CacheHit == true) * 100.0) / count(),\n    TotalBytesServed = sum(BytesServed),\n    AvgResponseTime = avg(DurationMs)\n    by bin(TimeGenerated, 10m)\n| extend TotalBytesServedMB = TotalBytesServed / 1024.0 / 1024.0\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "Download Analytics",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["RangeRequestPercent", "CacheHitPercent", "TotalBytesServedMB"]
+              }
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "fileops"
+      },
+      "name": "FileOperationsTab"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppDependencies\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| where Type == \"Http\" and Target contains \"graph.microsoft.com\"\n| extend GraphOperation = tostring(Properties[\"GraphOperation\"])\n| summarize\n    CallCount = count(),\n    SuccessRate = (countif(Success == true) * 100.0) / count(),\n    AvgDuration = avg(DurationMs),\n    P95Duration = percentile(DurationMs, 95)\n    by bin(TimeGenerated, 5m), GraphOperation\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "Graph API Health",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["SuccessRate", "AvgDuration"],
+                "group": "GraphOperation"
+              }
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppMetrics\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| where Name contains \"memory\" or Name contains \"cpu\" or Name contains \"connections\"\n| extend MetricCategory = case(\n    Name contains \"memory\", \"Memory\",\n    Name contains \"cpu\", \"CPU\",\n    Name contains \"connections\", \"Connections\",\n    \"Other\")\n| summarize AvgValue = avg(Value), MaxValue = max(Value) by bin(TimeGenerated, 5m), MetricCategory\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "System Resources",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["AvgValue", "MaxValue"],
+                "group": "MetricCategory"
+              }
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "health"
+      },
+      "name": "SystemHealthTab"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppRequests\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| where Url contains \"/obo/\"\n| summarize\n    TotalRequests = count(),\n    UnauthorizedRequests = countif(ResultCode == \"401\"),\n    ForbiddenRequests = countif(ResultCode == \"403\"),\n    AuthFailureRate = ((countif(ResultCode == \"401\") + countif(ResultCode == \"403\")) * 100.0) / count()\n    by bin(TimeGenerated, 5m)\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "Authentication & Authorization",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["AuthFailureRate", "UnauthorizedRequests", "ForbiddenRequests"]
+              }
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AppTraces\n| where TimeGenerated {TimeRange:query}\n| where AppRoleName == \"Spe.Bff.Api\"\n| where Message contains \"Rate limit exceeded\"\n| extend\n    PolicyName = tostring(Properties[\"PolicyName\"]),\n    Endpoint = tostring(Properties[\"Endpoint\"])\n| summarize ViolationCount = count() by bin(TimeGenerated, 5m), PolicyName\n| order by TimeGenerated desc",
+              "size": 0,
+              "title": "Rate Limiting Violations",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.insights/components",
+              "visualization": "linechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": ["ViolationCount"],
+                "group": "PolicyName"
+              }
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "selectedTab",
+        "comparison": "isEqualTo",
+        "value": "security"
+      },
+      "name": "SecurityTab"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/{subscription-id}/resourceGroups/{resource-group}/providers/Microsoft.Insights/components/{app-insights-name}"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

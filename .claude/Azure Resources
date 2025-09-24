@@ -1,0 +1,26 @@
+## Subscription and Resource Group ##
+- Resource Group: SharePointEmbedded
+- Location: eastus
+- Subscription Name:Spaarke SPE Subscription 1
+- Subscription ID: 484bc857-3802-427f-9ea5-ca47b43db0f0
+
+## App Registration ##
+- Application (client) ID: 170c98e1-d486-4355-bcbe-170454e0207c
+- Object ID: f21aa14d-0f0b-46f9-9045-9d5dfef58cf7
+- Directory (tenant) ID: a221a95e-6abc-4434-aecc-e48338a1b2f2
+- Supported account types: Multiple organizations
+
+## Keyvault ##
+- Key Vault Name: spaarke-spekvcert
+- Subscription: Spaarke SPE Subscription 1
+-  Resource Group: SharePointEmbedded
+- Correlation ID: d9b32e04-a6bd-4b92-813b-afa1a16e0725
+
+## SharePoint Embedded ##
+- ContainerTypeName   : Spaarke PAYGO 1
+- ContainerTypeId     : 8a6ce34c-6055-4681-8f87-2f4f9f921c06
+- OwningApplicationId    : 170c98e1-d486-4355-bcbe-170454e0207c
+- AzureSubscriptionId    : 484bc857-3802-427f-9ea5-ca47b43db0f0
+- ResourceGroup          : SharePointEmbedded
+- Region                 : eastus
+- Classification         : Standard

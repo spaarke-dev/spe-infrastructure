@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "value": "spaarke-spe-dev"
+    },
+    "location": {
+      "value": "westus2"
+    },
+    "planSkuName": {
+      "value": "P1v3"
+    },
+    "planSkuTier": {
+      "value": "PremiumV3"
+    },
+    "planCapacity": {
+      "value": 1
+    },
+    "uamiName": {
+      "value": "spaarke-spe-uami-dev"
+    },
+    "kvName": {
+      "value": "spaarke-spekvcert"
+    },
+    "webAppName": {
+      "value": "spaarke-spe-bff-dev"
+    },
+    "corsAllowedOrigins": {
+      "value": "https://localhost:5173"
+    },
+    "aiName": {
+      "value": "spaarke-spe-ai-dev"
+    }
+  }
+}

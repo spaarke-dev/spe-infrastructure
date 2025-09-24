@@ -1,0 +1,234 @@
+// ==================================================
+// SPE Infrastructure Monitoring - KQL Queries
+// ==================================================
+
+// ----- API Performance Metrics -----
+
+// Request Duration by Endpoint
+AppRequests
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| extend Endpoint = tostring(Properties["EndpointName"])
+| summarize
+    RequestCount = count(),
+    AvgDuration = avg(DurationMs),
+    P95Duration = percentile(DurationMs, 95),
+    P99Duration = percentile(DurationMs, 99),
+    MaxDuration = max(DurationMs)
+    by Endpoint, bin(TimeGenerated, 5m)
+| order by TimeGenerated desc
+
+// Error Rate by Endpoint
+AppRequests
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| extend Endpoint = tostring(Properties["EndpointName"])
+| summarize
+    TotalRequests = count(),
+    ErrorRequests = countif(Success == false),
+    ErrorRate = (countif(Success == false) * 100.0) / count()
+    by Endpoint, bin(TimeGenerated, 5m)
+| where ErrorRate > 0
+| order by ErrorRate desc, TimeGenerated desc
+
+// ----- Rate Limiting Analysis -----
+
+// Rate Limit Violations
+AppTraces
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Message contains "Rate limit exceeded"
+| extend
+    PolicyName = tostring(Properties["PolicyName"]),
+    ClientId = tostring(Properties["ClientId"]),
+    Endpoint = tostring(Properties["Endpoint"])
+| summarize
+    ViolationCount = count(),
+    UniqueClients = dcount(ClientId)
+    by PolicyName, Endpoint, bin(TimeGenerated, 5m)
+| order by ViolationCount desc
+
+// Rate Limit Policy Effectiveness
+AppMetrics
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Name == "rate_limit_policy"
+| extend PolicyName = tostring(Properties["policy"])
+| summarize
+    RequestsAllowed = sumif(Value, Properties["result"] == "allowed"),
+    RequestsBlocked = sumif(Value, Properties["result"] == "blocked"),
+    BlockRate = (sumif(Value, Properties["result"] == "blocked") * 100.0) / sum(Value)
+    by PolicyName, bin(TimeGenerated, 5m)
+| order by BlockRate desc
+
+// ----- Graph API Integration Health -----
+
+// Graph API Response Times
+AppDependencies
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Type == "Http" and Target contains "graph.microsoft.com"
+| extend GraphOperation = tostring(Properties["GraphOperation"])
+| summarize
+    CallCount = count(),
+    AvgDuration = avg(DurationMs),
+    P95Duration = percentile(DurationMs, 95),
+    SuccessRate = (countif(Success == true) * 100.0) / count()
+    by GraphOperation, bin(TimeGenerated, 5m)
+| order by AvgDuration desc
+
+// Graph API Error Analysis
+AppExceptions
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where OuterType contains "ServiceException" or OuterMessage contains "graph"
+| extend
+    GraphErrorCode = tostring(Properties["GraphErrorCode"]),
+    GraphOperation = tostring(Properties["GraphOperation"]),
+    HttpStatusCode = tostring(Properties["HttpStatusCode"])
+| summarize
+    ErrorCount = count(),
+    UniqueErrorCodes = make_set(GraphErrorCode)
+    by GraphOperation, HttpStatusCode, bin(TimeGenerated, 5m)
+| order by ErrorCount desc
+
+// ----- File Operations Analytics -----
+
+// Upload Performance by Size
+AppRequests
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Url contains "/upload" or Url contains "/chunk"
+| extend
+    UploadSize = tolong(Properties["ContentLength"]),
+    UploadType = case(
+        Url contains "upload-session", "LargeUpload",
+        Url contains "chunk", "ChunkUpload",
+        "SmallUpload")
+| where isnotnull(UploadSize) and UploadSize > 0
+| summarize
+    UploadCount = count(),
+    AvgSize = avg(UploadSize),
+    TotalSize = sum(UploadSize),
+    AvgDuration = avg(DurationMs),
+    P95Duration = percentile(DurationMs, 95)
+    by UploadType, bin(TimeGenerated, 10m)
+| extend ThroughputMBps = (TotalSize / 1024.0 / 1024.0) / (AvgDuration / 1000.0)
+| order by TimeGenerated desc
+
+// Download Analytics with Range Requests
+AppRequests
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Url contains "/content"
+| extend
+    HasRange = tobool(Properties["HasRangeHeader"]),
+    BytesServed = tolong(Properties["ContentLength"]),
+    CacheHit = tobool(Properties["ETagCacheHit"])
+| summarize
+    DownloadCount = count(),
+    RangeRequestPct = (countif(HasRange == true) * 100.0) / count(),
+    CacheHitPct = (countif(CacheHit == true) * 100.0) / count(),
+    TotalBytesServed = sum(BytesServed),
+    AvgDuration = avg(DurationMs)
+    by bin(TimeGenerated, 10m)
+| order by TimeGenerated desc
+
+// ----- Authentication & Authorization -----
+
+// OBO Token Exchange Success Rate
+AppRequests
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Url contains "/obo/"
+| extend
+    HasBearer = tobool(Properties["HasBearerToken"]),
+    TokenValid = tobool(Properties["TokenValid"])
+| summarize
+    RequestCount = count(),
+    UnauthorizedRequests = countif(ResultCode == "401"),
+    ForbiddenRequests = countif(ResultCode == "403"),
+    AuthFailureRate = ((countif(ResultCode == "401") + countif(ResultCode == "403")) * 100.0) / count()
+    by bin(TimeGenerated, 5m)
+| where AuthFailureRate > 0
+| order by AuthFailureRate desc
+
+// User Capabilities Cache Performance
+AppMetrics
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Name == "user_capabilities_cache"
+| summarize
+    CacheHits = sumif(Value, Properties["result"] == "hit"),
+    CacheMisses = sumif(Value, Properties["result"] == "miss"),
+    CacheHitRate = (sumif(Value, Properties["result"] == "hit") * 100.0) / sum(Value)
+    by bin(TimeGenerated, 5m)
+| order by TimeGenerated desc
+
+// ----- System Health & Resource Usage -----
+
+// Memory Usage Patterns
+AppMetrics
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Name == "dotnet_gc_memory_total_available_bytes" or Name contains "memory"
+| summarize
+    AvgMemoryMB = avg(Value) / 1024.0 / 1024.0,
+    MaxMemoryMB = max(Value) / 1024.0 / 1024.0
+    by Name, bin(TimeGenerated, 5m)
+| order by TimeGenerated desc
+
+// HTTP Connection Pool Health
+AppMetrics
+| where TimeGenerated > ago(1h)
+| where AppRoleName == "Spe.Bff.Api"
+| where Name contains "http_client_connections"
+| summarize
+    ActiveConnections = avg(Value),
+    MaxConnections = max(Value)
+    by bin(TimeGenerated, 5m)
+| order by TimeGenerated desc
+
+// ----- Critical Alerts Query -----
+
+// High Error Rate Alert (>5% for any endpoint)
+AppRequests
+| where TimeGenerated > ago(5m)
+| where AppRoleName == "Spe.Bff.Api"
+| extend Endpoint = tostring(Properties["EndpointName"])
+| summarize
+    TotalRequests = count(),
+    ErrorRequests = countif(Success == false),
+    ErrorRate = (countif(Success == false) * 100.0) / count()
+    by Endpoint
+| where TotalRequests >= 10 and ErrorRate > 5.0
+| project Endpoint, TotalRequests, ErrorRequests, ErrorRate
+| order by ErrorRate desc
+
+// High Response Time Alert (P95 > 5000ms)
+AppRequests
+| where TimeGenerated > ago(5m)
+| where AppRoleName == "Spe.Bff.Api"
+| extend Endpoint = tostring(Properties["EndpointName"])
+| summarize
+    RequestCount = count(),
+    P95Duration = percentile(DurationMs, 95)
+    by Endpoint
+| where RequestCount >= 5 and P95Duration > 5000
+| project Endpoint, RequestCount, P95Duration
+| order by P95Duration desc
+
+// Graph API Dependency Failure Alert
+AppDependencies
+| where TimeGenerated > ago(5m)
+| where AppRoleName == "Spe.Bff.Api"
+| where Type == "Http" and Target contains "graph.microsoft.com"
+| extend GraphOperation = tostring(Properties["GraphOperation"])
+| summarize
+    CallCount = count(),
+    FailureCount = countif(Success == false),
+    FailureRate = (countif(Success == false) * 100.0) / count()
+    by GraphOperation
+| where CallCount >= 3 and FailureRate > 20.0
+| project GraphOperation, CallCount, FailureCount, FailureRate
+| order by FailureRate desc

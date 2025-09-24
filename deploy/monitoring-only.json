@@ -1,0 +1,66 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "environmentSuffix": {
+            "type": "string",
+            "defaultValue": "[substring(uniqueString(resourceGroup().id), 0, 6)]",
+            "metadata": {
+                "description": "Unique suffix for resource names"
+            }
+        }
+    },
+    "variables": {
+        "appInsightsName": "[concat('spe-insights-dev-', parameters('environmentSuffix'))]",
+        "logAnalyticsName": "[concat('spe-logs-dev-', parameters('environmentSuffix'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2021-06-01",
+            "name": "[variables('logAnalyticsName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "name": "PerGB2018"
+                },
+                "retentionInDays": 90
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('appInsightsName')]",
+            "location": "[parameters('location')]",
+            "kind": "web",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+            ],
+            "properties": {
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+            }
+        }
+    ],
+    "outputs": {
+        "appInsightsName": {
+            "type": "string",
+            "value": "[variables('appInsightsName')]"
+        },
+        "appInsightsConnectionString": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).ConnectionString]"
+        },
+        "logAnalyticsWorkspaceName": {
+            "type": "string",
+            "value": "[variables('logAnalyticsName')]"
+        }
+    }
+}
