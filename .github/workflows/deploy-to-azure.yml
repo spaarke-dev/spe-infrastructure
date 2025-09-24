@@ -43,6 +43,8 @@ jobs:
 
     - name: Test
       run: dotnet test --configuration Release --logger trx --collect:"XPlat Code Coverage" --verbosity normal
+      env:
+        USE_FAKE_GRAPH: 1
 
     - name: Publish API
       run: dotnet publish src/Spe.Bff.Api/Spe.Bff.Api.csproj -c Release -o ./publish
@@ -147,3 +149,4 @@ jobs:
         dotnet test tests/Spe.Bff.Api.Tests --configuration Release --logger trx
       env:
         ASPNETCORE_ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+        USE_FAKE_GRAPH: 1
