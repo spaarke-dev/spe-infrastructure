@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__ide__getDiagnostics",
+      "Read(//c/code_files/spaarke spe/spe-samples/asp.net-webservice/**)",
+      "Read(//c/code_files/spaarke spe/spe-samples/spe-typescript-react-azurefunction/**)",
+      "Bash(dotnet build)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(dotnet run:*)",
+      "Bash(set UAMI_CLIENT_ID=test-client-id)",
+      "Bash(git apply:*)",
+      "Bash(set TENANT_ID=test-tenant-id)",
+      "Bash(set API_APP_ID=test-app-id)",
+      "Bash(set API_CLIENT_SECRET=test-secret)",
+      "Bash(git checkout:*)",
+      "Bash(dotnet sln add:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet clean:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet remove:*)",
+      "Read(//tmp/MicrosoftEdgeDownloads/cbc630d7-2ed8-4364-92f8-d7261cc0ff46/**)",
+      "Bash(dotnet list package:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(del nul)",
+      "Bash(git push:*)",
+      "Bash(git mv:*)",
+      "Bash(ren:*)",
+      "Bash(grep:*)",
+      "Bash(dotnet sln remove:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet build:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

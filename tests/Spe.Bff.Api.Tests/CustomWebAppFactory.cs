@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Spe.Bff.Api.Tests.Mocks;
-using Spe.TestServer.Infrastructure.Graph;
+using Spe.Bff.Api.Infrastructure.Graph;
 
 namespace Spe.Bff.Api.Tests;
 

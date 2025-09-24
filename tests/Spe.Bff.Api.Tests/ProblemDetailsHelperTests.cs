@@ -2,7 +2,7 @@ using System.Text;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Graph;
-using Spe.TestServer.Infrastructure.Errors;
+using Spe.Bff.Api.Infrastructure.Errors;
 using Xunit;
 
 namespace Spe.Bff.Api.Tests;

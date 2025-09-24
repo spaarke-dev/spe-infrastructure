@@ -1,0 +1,64 @@
+# --- OS cruft
+.DS_Store
+Thumbs.db
+
+# --- Git/merge leftovers
+*.orig
+*.rej
+
+# --- Editors/IDEs
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+.idea/
+*.sln.iml
+
+# --- .NET build/output
+bin/
+obj/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.sln.docstates
+
+# --- Logs & coverage
+logs/
+*.log
+coverage/
+**/coverage.cobertura.xml
+
+# --- Local env & secrets (never commit real secrets)
+.env
+.env.*
+secrets.json
+appsettings.*.local.json
+# If you keep Development settings in repo, do NOT include secrets there.
+# appsettings.Development.json
+
+# --- Azure Functions (if any samples exist)
+local.settings.json
+
+# --- Frontend (if you add a SPA)
+node_modules/
+dist/
+build/
+.esbuild/
+.next/
+out/
+
+# --- Helper/AI/temporary artifacts
+/claude/
+backups/
+tmp/
+temp/
+publish/
+*.patch
+*.bundle
+*.zip
+*.tgz
+
+# --- Docker (keep compose files tracked; ignore local overrides)
+docker-data/

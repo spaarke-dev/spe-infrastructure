@@ -1,4 +1,4 @@
-using Spe.TestServer.Infrastructure.Graph;
+using Spe.Bff.Api.Infrastructure.Graph;
 using Microsoft.Graph;
 using Microsoft.Kiota.Abstractions.Authentication;
 

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
@@ -20,6 +20,6 @@
     <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\services\Spe.TestServer\Spe.TestServer.csproj" />
+    <ProjectReference Include="..\..\src\Spe.Bff.Api\Spe.Bff.Api.csproj" />
   </ItemGroup>
 </Project>
