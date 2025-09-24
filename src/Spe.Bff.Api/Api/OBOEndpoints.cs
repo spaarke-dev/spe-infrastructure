@@ -265,6 +265,34 @@ public static class OBOEndpoints
             }
         }).RequireRateLimiting("graph-read");
 
+        // DELETE: delete item (as user)
+        app.MapDelete("/api/obo/drives/{driveId}/items/{itemId}", async (
+            string driveId,
+            string itemId,
+            HttpContext ctx,
+            IOboSpeService oboSpeService) =>
+        {
+            var bearer = GetBearer(ctx);
+            if (string.IsNullOrWhiteSpace(bearer))
+            {
+                return Results.Unauthorized();
+            }
+
+            try
+            {
+                await oboSpeService.DeleteItemAsync(bearer, driveId, itemId);
+                return Results.NoContent();
+            }
+            catch (ServiceException ex)
+            {
+                return ProblemDetailsHelper.FromGraphException(ex);
+            }
+            catch (Exception)
+            {
+                return Results.Problem(statusCode: 500, title: "Delete failed");
+            }
+        }).RequireRateLimiting("graph-write");
+
         return app;
     }
 
