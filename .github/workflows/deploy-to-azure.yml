@@ -18,9 +18,10 @@ on:
           - prod
 
 env:
-  AZURE_RESOURCE_GROUP: spe-infrastructure-rg
-  AZURE_LOCATION: eastus
+  AZURE_RESOURCE_GROUP: SharePointEmbedded
+  AZURE_LOCATION: westus2
   DOTNET_VERSION: '8.0.x'
+  APP_SERVICE_NAME: spe-api-dev-67e2xz
 
 jobs:
   build-and-test:
@@ -100,13 +101,13 @@ jobs:
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: spe-api-dev-67e2xz
+        app-name: ${{ env.APP_SERVICE_NAME }}
         package: ./publish
 
     - name: Update App Settings
       uses: azure/appservice-settings@v1
       with:
-        app-name: spe-api-dev-67e2xz
+        app-name: ${{ env.APP_SERVICE_NAME }}
         app-settings-json: |
           [
             {
@@ -142,7 +143,7 @@ jobs:
 
     - name: Run Integration Tests
       run: |
-        export BASE_URL=https://spe-api-${{ github.event.inputs.environment || 'dev' }}.azurewebsites.net
+        export BASE_URL=https://${{ env.APP_SERVICE_NAME }}.azurewebsites.net
         dotnet test tests/Spe.Bff.Api.Tests --configuration Release --logger trx
       env:
         ASPNETCORE_ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}

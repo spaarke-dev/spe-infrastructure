@@ -81,7 +81,18 @@
       "Bash(az logout:*)",
       "Bash(az cache:*)",
       "Bash(az account:*)",
-      "Bash(dotnet publish:*)"
+      "Bash(dotnet publish:*)",
+      "Bash(az webapp deploy:*)",
+      "Bash(az webapp log tail:*)",
+      "Bash(az webapp config show:*)",
+      "Bash(az webapp config appsettings list:*)",
+      "Bash(az webapp log show:*)",
+      "Bash(az webapp restart:*)",
+      "Bash(az webapp config appsettings set:*)",
+      "Bash(az webapp config set:*)",
+      "Bash(az webapp log download:*)",
+      "Bash(find:*)",
+      "Bash(az ad sp create-for-rbac:*)"
     ],
     "deny": [],
     "ask": []

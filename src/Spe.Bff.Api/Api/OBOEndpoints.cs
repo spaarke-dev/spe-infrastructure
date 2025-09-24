@@ -270,7 +270,8 @@ public static class OBOEndpoints
             string driveId,
             string itemId,
             HttpContext ctx,
-            IOboSpeService oboSpeService) =>
+            IOboSpeService oboSpeService,
+            CancellationToken ct) =>
         {
             var bearer = GetBearer(ctx);
             if (string.IsNullOrWhiteSpace(bearer))
@@ -280,7 +281,7 @@ public static class OBOEndpoints
 
             try
             {
-                await oboSpeService.DeleteItemAsync(bearer, driveId, itemId);
+                await oboSpeService.DeleteItemAsync(bearer, driveId, itemId, ct);
                 return Results.NoContent();
             }
             catch (ServiceException ex)

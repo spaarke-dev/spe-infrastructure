@@ -60,5 +60,10 @@ publish/
 *.zip
 *.tgz
 
+# --- Credentials (never commit)
+.claude/scripts/azure-credentials.txt
+azure-credentials.txt
+**/azure-credentials.*
+
 # --- Docker (keep compose files tracked; ignore local overrides)
 docker-data/
