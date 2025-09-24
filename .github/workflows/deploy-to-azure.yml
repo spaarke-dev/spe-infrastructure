@@ -41,7 +41,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release
 
     - name: Test
-      run: dotnet test --no-build --configuration Release --logger trx --collect:"XPlat Code Coverage"
+      run: dotnet test --configuration Release --logger trx --collect:"XPlat Code Coverage" --verbosity normal
 
     - name: Publish API
       run: dotnet publish src/Spe.Bff.Api/Spe.Bff.Api.csproj -c Release -o ./publish
@@ -100,13 +100,13 @@ jobs:
     - name: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: spe-api-${{ github.event.inputs.environment || 'dev' }}
+        app-name: spe-api-dev-67e2xz
         package: ./publish
 
     - name: Update App Settings
       uses: azure/appservice-settings@v1
       with:
-        app-name: spe-api-${{ github.event.inputs.environment || 'dev' }}
+        app-name: spe-api-dev-67e2xz
         app-settings-json: |
           [
             {
