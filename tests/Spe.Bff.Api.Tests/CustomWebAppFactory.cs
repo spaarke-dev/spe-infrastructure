@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Spe.Bff.Api.Tests.Mocks;
 using Spe.Bff.Api.Infrastructure.Graph;
+using Services;
 
 namespace Spe.Bff.Api.Tests;
 
@@ -30,9 +31,15 @@ public class CustomWebAppFactory : WebApplicationFactory<Program>
         {
             if (Environment.GetEnvironmentVariable("USE_FAKE_GRAPH") == "1")
             {
-                var d = services.SingleOrDefault(s => s.ServiceType == typeof(IGraphClientFactory));
-                if (d != null) services.Remove(d);
+                // Replace Graph client factory
+                var graphFactory = services.SingleOrDefault(s => s.ServiceType == typeof(IGraphClientFactory));
+                if (graphFactory != null) services.Remove(graphFactory);
                 services.AddSingleton<IGraphClientFactory, FakeGraphClientFactory>();
+
+                // Replace OBO SPE service with mock
+                var oboService = services.SingleOrDefault(s => s.ServiceType == typeof(IOboSpeService));
+                if (oboService != null) services.Remove(oboService);
+                services.AddSingleton<IOboSpeService, MockOboSpeService>();
             }
         });
     }
